@@ -4,25 +4,29 @@ import {
     CardTitle, CardSubtitle, Button,
     Row, Col, Container
   } from 'reactstrap';
+import TwoColumnLayout from "../../layout/TwoColumnLayout";
+import NavBar from '../../page/NavBar';
+import axios from "axios";
+
 
 function Item() {
     const [items, setItems] = useState([]);
     
-
-    useState(() => {
-        console.log('useEffect called.');
-        setItems([
-            {id: 1, item_name: "Sizzling Chicken Burger", price: 3.99, item_quantity: 1},
-            {id: 2, item_name: "Sizzling Cheese Burger", price: 1.99, item_quantity: 1},
-            {id: 3, item_name: "Sizzling Beef Burger", price: 5.99, item_quantity: 1},
-        ]);
-    }, []);
+    useState(async () => {
+        try {
+            const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/items/listing/1`);
+            console.log(response.data);
+            setItems(response.data.data);
+          } catch (error) {
+            console.error(error);
+        }
+    }, [items]);
 
     const qtyMaxHandler = (id) => {
         const newItems = [...items];
         const foundItem = newItems.find(item => item.id === id);
-        foundItem.item_quantity = foundItem.item_quantity + 1;
-        foundItem.price = foundItem.price * foundItem.item_quantity;
+        foundItem.item_quantity = Number( foundItem.item_quantity ) + 1;
+        foundItem.total = foundItem.price * foundItem.item_quantity;
         
         setItems(newItems);
     }
@@ -31,26 +35,29 @@ function Item() {
         const newItems = [...items];
         const foundItem = newItems.find(item => item.id === id);
         foundItem.item_quantity = foundItem.item_quantity - 1;
-        foundItem.price = foundItem.price * foundItem.item_quantity;
+        foundItem.total = foundItem.price * foundItem.item_quantity;
         setItems(newItems);
     }
 
     return (
-        <Container>
-            <Row>
-                {items && items.map(({id, item_name, item_quantity, price}) => <Col sm="3">
-                    <Card>
-                        <CardImg top width="100%" src="https://via.placeholder.com/150" alt="Card image cap" />
-                        <CardBody>
-                            <CardTitle tag="h5">{item_name}</CardTitle>
-                            <CardSubtitle tag="h6" className="mb-2 text-muted">{item_quantity} - ${price}</CardSubtitle>
-                            <Button color="primary" onClick={() => qtyMaxHandler(id)}>Max</Button> {  }
-                            <Button color="danger" onClick={() => qtyMinHandler(id)}>Min</Button>
-                        </CardBody>
-                    </Card>
-                </Col>)}
-            </Row>
-        </Container>
+        <TwoColumnLayout>
+            <NavBar />
+            <Container className="mt-3">
+                <Row>
+                    {items && items.map(({item_id, item_name, item_quantity, item_image, item_price,  total}) => <Col sm="3">
+                        <Card>
+                            <CardImg top width="100%" src={process.env.REACT_APP_API_FOOD_ITEMS_IMAGE_PATH + item_image} alt="Card image cap" />
+                            <CardBody>
+                                <CardTitle tag="h5">{item_name}</CardTitle>
+                                <CardSubtitle tag="h6" className="mb-2 text-muted">{item_quantity} - ${Number(item_price).toFixed(2)}</CardSubtitle>
+                                <Button color="primary" onClick={() => qtyMaxHandler(item_id)}>Max</Button> {  }
+                                <Button color="danger" onClick={() => qtyMinHandler(item_id)}>Min</Button>
+                            </CardBody>
+                        </Card>
+                    </Col>)}
+                </Row>
+            </Container>
+        </TwoColumnLayout>
     )
 }
 
